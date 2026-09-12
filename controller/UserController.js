@@ -1,16 +1,36 @@
 const userModel = require("../model/userModel.js")
+const bcrypt = require("bcrypt")
 //  CSSMathProduct
 // CREATE USER
 //  READ USER
 // UPDATE USER
 // DELETE USER
 
+const loginUser = async (req, res) =>{
+    try{
+
+        const {name, password} = req.body
+        const user = await userModel.findOne({name})
+        if(!user){
+            return res.status(400).json({message: "Are you sure you signed up?"})
+        }
+        const isMatch = await bcrypt.compare(password, user.password)
+        if(!isMatch){
+            return res.status(404).json({message: "Password is incorrect"})
+        }
+        return res.status(200).json({message: "login successful"})
+    }catch(error){
+        return res.status(500).json({message: "user not found"})
+    }
+}
 //creat user
  const createUser = async (req, res) => {
     try{
         const { name, email, password } = req.body
+        const genSalt = await bcrypt.genSalt(10)
+        const hashedPassword = await bcrypt.hash(password, genSalt)
         const user = await userModel.create({
-            name, email, password
+            name, email, password: hashedPassword
         })
         res.status(201).json({
             message: "User created successfully",
@@ -94,4 +114,4 @@ const deleteUser = async (req, res) => {
     }
 }
 
-module.exports = { createUser, getAllUsers, getSingleUser, updateUser, deleteUser}
+module.exports = {loginUser, createUser, getAllUsers, getSingleUser, updateUser, deleteUser}
